@@ -15,9 +15,9 @@ namespace SpeedTest.Tests
         }
 
         [Fact]
-        public void Should_return_settings_with_sorted_server_list_by_distance()
+        public async void Should_return_settings_with_sorted_server_list_by_distance()
         {
-            var settings = _speedTestClientClient.GetSettings();
+            var settings = await _speedTestClientClient.GetSettingsAsync();
 
             for (var i = 1; i < settings.Servers.Count; i++)
             {
@@ -26,9 +26,9 @@ namespace SpeedTest.Tests
         }
         
         [Fact]
-        public void Should_return_settings_with_filtered_server_list_by_ignored_ids()
+        public async void Should_return_settings_with_filtered_server_list_by_ignored_ids()
         {
-            var settings = _speedTestClientClient.GetSettings();
+            var settings = await _speedTestClientClient.GetSettingsAsync();
 
             var ignoredIds = settings.ServerConfig.IgnoreIds.Split(new[] {","}, StringSplitOptions.RemoveEmptyEntries);
 
@@ -37,29 +37,29 @@ namespace SpeedTest.Tests
         }
 
         [Fact]
-        public void Should_test_latency_to_server()
+        public async void Should_test_latency_to_server()
         {
-            var settings = _speedTestClientClient.GetSettings();
-            var latency = _speedTestClientClient.TestServerLatency(settings.Servers.First());
+            var settings = await _speedTestClientClient.GetSettingsAsync();
+            var latency = await _speedTestClientClient.TestServerLatencyAsync(settings.Servers.First());
 
             Assert.True(latency > 0);
             Assert.True(latency < 1000 * 60 * 5);
         }
 
         [Fact]
-        public void Should_test_download_speed()
+        public async void Should_test_download_speed()
         {
-            var settings = _speedTestClientClient.GetSettings();
-            var speed = _speedTestClientClient.TestDownloadSpeed(settings.Servers.First(), settings.Download.ThreadsPerUrl);
+            var settings = await _speedTestClientClient.GetSettingsAsync();
+            var speed = await _speedTestClientClient.TestDownloadSpeedAsync(settings.Servers.First(), settings.Download.ThreadsPerUrl);
 
             Assert.True(speed > 0);
         }
 
         [Fact]
-        public void Should_test_upload_speed()
+        public async void Should_test_upload_speed()
         {
-            var settings = _speedTestClientClient.GetSettings();
-            var speed = _speedTestClientClient.TestUploadSpeed(settings.Servers.First(), settings.Upload.ThreadsPerUrl);
+            var settings = await _speedTestClientClient.GetSettingsAsync();
+            var speed = await _speedTestClientClient.TestUploadSpeedAsync(settings.Servers.First(), settings.Upload.ThreadsPerUrl);
 
             Assert.True(speed > 0);
         }

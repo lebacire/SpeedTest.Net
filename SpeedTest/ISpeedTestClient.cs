@@ -1,4 +1,5 @@
 ﻿using SpeedTest.Models;
+using System.Threading.Tasks;
 
 namespace SpeedTest
 {
@@ -8,24 +9,24 @@ namespace SpeedTest
         /// Download speedtest.net settings
         /// </summary>
         /// <returns>speedtest.net settings</returns>
-        Settings GetSettings();
+        Task<Settings> GetSettingsAsync();
 
         /// <summary>
         /// Test latency (ping) to server
         /// </summary>
         /// <returns>Latency in milliseconds (ms)</returns>
-        int TestServerLatency(Server server, int retryCount = 3);
+        Task<int> TestServerLatencyAsync(Server server, int retryCount = 3);
 
         /// <summary>
         /// Test download speed to server
         /// </summary>
         /// <returns>Download speed in Kbps</returns>
-        double TestDownloadSpeed(Server server, int simultaniousDownloads = 2, int retryCount = 2);
+        Task<double> TestDownloadSpeedAsync(Server server, int simultaniousDownloads = 2, int retryCount = 2);
 
         /// <summary>
         /// Test upload speed to server
         /// </summary>
         /// <returns>Upload speed in Kbps</returns>
-        double TestUploadSpeed(Server server, int simultaniousUploads = 2, int retryCount = 2);
+        Task<double> TestUploadSpeedAsync(Server server, int simultaniousUploads = 2, int retryCount = 2);
     }
 }

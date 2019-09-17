@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using SpeedTest.Models;
 
 namespace SpeedTest.Client
@@ -10,19 +11,19 @@ namespace SpeedTest.Client
         private static SpeedTestClient client;
         private static Settings settings;
 
-        static void Main()
+        static async Task Main()
         {
             Console.WriteLine("Getting speedtest.net settings and server list...");
             client = new SpeedTestClient();
-            settings = client.GetSettings();
+            settings = await client.GetSettingsAsync();
 
-            var servers = SelectServers();
+            var servers = await SelectServers();
             var bestServer = SelectBestServer(servers);
 
             Console.WriteLine("Testing speed...");
-            var downloadSpeed = client.TestDownloadSpeed(bestServer, settings.Download.ThreadsPerUrl);
+            var downloadSpeed = await client.TestDownloadSpeedAsync(bestServer, settings.Download.ThreadsPerUrl);
             PrintSpeed("Download", downloadSpeed);
-            var uploadSpeed = client.TestUploadSpeed(bestServer, settings.Upload.ThreadsPerUrl);
+            var uploadSpeed = await client.TestUploadSpeedAsync(bestServer, settings.Upload.ThreadsPerUrl);
             PrintSpeed("Upload", uploadSpeed);
 
             Console.WriteLine("Press a key to exit.");
@@ -39,7 +40,7 @@ namespace SpeedTest.Client
             return bestServer;
         }
 
-        private static IEnumerable<Server> SelectServers()
+        private static async Task<IEnumerable<Server>> SelectServers()
         {
             Console.WriteLine();
             Console.WriteLine("Selecting best server by distance...");
@@ -47,7 +48,7 @@ namespace SpeedTest.Client
 
             foreach (var server in servers)
             {
-                server.Latency = client.TestServerLatency(server);
+                server.Latency = await client.TestServerLatencyAsync(server);
                 PrintServerDetails(server);
             }
             return servers;

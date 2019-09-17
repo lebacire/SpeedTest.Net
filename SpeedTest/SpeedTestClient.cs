@@ -34,18 +34,18 @@ namespace SpeedTest
         /// Download speedtest.net settings
         /// </summary>
         /// <returns>speedtest.net settings</returns>
-        public Settings GetSettings()
+        public async Task<Settings> GetSettingsAsync()
         {
             using (var client = new SpeedTestHttpClient())
             {
-                var settings = client.GetConfig<Settings>(ConfigUrl).GetAwaiter().GetResult();
+                var settings = await client.GetConfig<Settings>(ConfigUrl);
 
                 var serversConfig = new ServersList();
                 foreach (var serversUrl in ServersUrls)
                 {
                     try
                     {
-                        serversConfig = client.GetConfig<ServersList>(serversUrl).GetAwaiter().GetResult();
+                        serversConfig = await client.GetConfig<ServersList>(serversUrl);
                         if (serversConfig.Servers.Count > 0) break;
                     }
                     catch
@@ -74,7 +74,7 @@ namespace SpeedTest
         /// Test latency (ping) to server
         /// </summary>
         /// <returns>Latency in milliseconds (ms)</returns>
-        public int TestServerLatency(Server server, int retryCount = 3)
+        public async Task<int> TestServerLatencyAsync(Server server, int retryCount = 3)
         {
             var latencyUri = CreateTestUrl(server, "latency.txt");
             var timer = new Stopwatch();
@@ -87,7 +87,7 @@ namespace SpeedTest
                     try
                     {
                         timer.Start();
-                        testString = client.GetStringAsync(latencyUri).ConfigureAwait(false).GetAwaiter().GetResult();
+                        testString = await client.GetStringAsync(latencyUri).ConfigureAwait(false);
                     }
                     catch (WebException)
                     {
@@ -95,7 +95,7 @@ namespace SpeedTest
                     }
                     finally
                     {
-                        timer.Stop();    
+                        timer.Stop();
                     }
 
                     if (!testString.StartsWith("test=test"))
@@ -112,11 +112,11 @@ namespace SpeedTest
         /// Test download speed to server
         /// </summary>
         /// <returns>Download speed in Kbps</returns>
-        public double TestDownloadSpeed(Server server, int simultaniousDownloads = 2, int retryCount = 2)
+        public Task<double> TestDownloadSpeedAsync(Server server, int simultaniousDownloads = 2, int retryCount = 2)
         {
             var testData = GenerateDownloadUrls(server, retryCount);
 
-            return TestSpeed(testData, async (client, url) =>
+            return TestSpeedAsync(testData, async (client, url) =>
             {
                 var data = await client.GetByteArrayAsync(url).ConfigureAwait(false);
                 return data.Length;
@@ -127,10 +127,10 @@ namespace SpeedTest
         /// Test upload speed to server
         /// </summary>
         /// <returns>Upload speed in Kbps</returns>
-        public double TestUploadSpeed(Server server, int simultaniousUploads = 2, int retryCount = 2)
+        public Task<double> TestUploadSpeedAsync(Server server, int simultaniousUploads = 2, int retryCount = 2)
         {
             var testData = GenerateUploadData(retryCount);
-            return TestSpeed(testData, async (client, uploadData) =>
+            return TestSpeedAsync(testData, async (client, uploadData) =>
             {
                 await client.PostAsync(server.Url, new StringContent(uploadData));
                 return uploadData.Length;
@@ -141,7 +141,7 @@ namespace SpeedTest
 
         #region Helpers
 
-        private static double TestSpeed<T>(IEnumerable<T> testData, Func<HttpClient, T, Task<int>> doWork, int concurencyCount = 2)
+        private static async Task<double> TestSpeedAsync<T>(IEnumerable<T> testData, Func<HttpClient, T, Task<int>> doWork, int concurencyCount = 2)
         {
             var timer = new Stopwatch();
             var throttler = new SemaphoreSlim(concurencyCount);
@@ -153,8 +153,7 @@ namespace SpeedTest
                 var client = new SpeedTestHttpClient();
                 try
                 {
-                    var size = await doWork(client, data).ConfigureAwait(false);
-                    return size;
+                    return await doWork(client, data).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -163,7 +162,7 @@ namespace SpeedTest
                 }
             }).ToArray();
 
-            Task.WaitAll(downloadTasks);
+            await Task.WhenAll(downloadTasks);
             timer.Stop();
 
             double totalSize = downloadTasks.Sum(task => task.Result);
