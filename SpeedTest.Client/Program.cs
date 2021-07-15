@@ -10,7 +10,7 @@ namespace SpeedTest.Client
     {
         private static SpeedTestClient client;
         private static Settings settings;
-
+        static List<int> invalid_server_ids = new List<int>(10);
         static async Task Main()
         {
             Console.WriteLine("Getting speedtest.net settings and server list...");
@@ -34,7 +34,7 @@ namespace SpeedTest.Client
         {
             Console.WriteLine();
             Console.WriteLine("Best server by latency:");
-            var bestServer = servers.OrderBy(x => x.Latency).First();
+            var bestServer = servers.Where(x => !invalid_server_ids.Contains(x.Id)).OrderBy(x => x.Latency).First();
             PrintServerDetails(bestServer);
             Console.WriteLine();
             return bestServer;
@@ -48,8 +48,19 @@ namespace SpeedTest.Client
 
             foreach (var server in servers)
             {
-                server.Latency = await client.TestServerLatencyAsync(server);
-                PrintServerDetails(server);
+                try
+                {
+                    server.Latency = await client.TestServerLatencyAsync(server);
+                    PrintServerDetails(server);
+                }
+                catch (Exception)
+                {
+                    System.Diagnostics.Debug.WriteLine("Invalid server ...");
+                    PrintServerDetails(server);
+                    System.Diagnostics.Debug.WriteLine("Invalid server ...");
+                    invalid_server_ids.Add(server.Id);
+                    continue;
+                }
             }
             return servers;
         }
